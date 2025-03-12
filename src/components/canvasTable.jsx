@@ -321,6 +321,7 @@ export default function CanvasTable() {
     const ctx = canvas.getContext("2d");
     const imageData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
 
+    setRedoStack([]);
     setUndoStack((prev) => [...prev, imageData]);
   }
 
