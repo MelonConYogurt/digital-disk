@@ -335,7 +335,7 @@ export default function CanvasTable() {
     <section className="flex flex-col text-gray-200">
       {isModalOpen ? (
         <div className="fixed inset-0 flex items-center justify-center bg-transparent backdrop-blur-xs z-[100]">
-          <div className="bg-[#282828] p-6 rounded-lg shadow-lg max-w-xl w-full flex flex-col  items-start gap-2">
+          <div className="bg-[#292929] p-6 rounded-lg shadow-2xl max-w-xl w-full flex flex-col  items-start gap-2">
             <h2 className="text-2xl place-self-center">Configuration </h2>
 
             <div className="flex flex-col gap-5 justify-center items-center mt-5">
