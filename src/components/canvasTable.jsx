@@ -11,6 +11,7 @@ export default function CanvasTable() {
       id: 0,
       active: true,
       visible: true,
+      z: 0,
       name: `layer base`,
       undoStack: [],
       redoStack: [],
@@ -415,6 +416,25 @@ export default function CanvasTable() {
     });
   }
 
+  function handleDropLayer(index) {
+    setLayers((prev) => {
+      return prev.filter((layer) => layer.id !== index);
+    });
+  }
+
+  function handleLayerVisibility(index) {
+    setLayers((prev) => {
+      return prev.map((layer) => {
+        if (layer.id === index) {
+          return {...layer, visible: !layer.visible};
+        }
+        return layer;
+      });
+    });
+  }
+
+  function handleZindexPosition(index, position) {}
+
   useEffect(() => {
     if (isConfigReady && !isDrawing && !erasing) {
       handleTrace();
@@ -453,9 +473,9 @@ export default function CanvasTable() {
                 width={canvasWidth}
                 height={canvasHeight}
                 style={{
-                  visibility: layer.visible === true ? "visible" : "hidden",
+                  visibility: layer.visible ? "visible" : "hidden",
                   zIndex: 10,
-                  pointerEvents: layer.active === true ? "auto" : "none",
+                  pointerEvents: layer.active ? "auto" : "none",
                 }}
                 ref={(element) => (layersRefs.current[index] = element)}
               ></canvas>
@@ -501,8 +521,8 @@ export default function CanvasTable() {
         </div>
       </nav>
 
-      <nav className="flex flex-row justify-starts items-center bg-[#2f2f2f]  w-full h-20 fixed top-0 left-0 z-50 border-b border-gray-500">
-        <div className="flex flex-row gap-2 justify-center items-center px-4 border-r border-gray-500 h-full">
+      <nav className="flex flex-row justify-starts items-center bg-[#2f2f2f] w-full h-20 fixed top-0 left-0 z-50">
+        <div className="flex flex-row gap-2 justify-center items-center h-full border-r-1 border-[#4d5058] px-4">
           <button
             className={`border border-gray-400 p-1 rounded-md w-9 h-9 ${
               isEraserActive ? "bg-[#555555]" : ""
@@ -547,15 +567,15 @@ export default function CanvasTable() {
             </svg>
           </button>
         </div>
-        <div className="border-r border-gray-500 h-full flex justify-center items-center px-4">
+        <div className=" h-full flex justify-center items-center border-r-1 border-[#4d5058] px-4">
           <ColorPicker selectColor={handleColorChange} />
         </div>
-        <div className="border-r border-gray-500 h-full flex justify-center items-center">
+        <div className=" h-full flex justify-center items-center border-r-1 border-[#4d5058] px-4">
           <button
             onClick={() => {
               console.log("Falta arreglar");
             }}
-            className="px-4 cursor-pointer"
+            className=" cursor-pointer"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -574,7 +594,7 @@ export default function CanvasTable() {
             </svg>
           </button>
         </div>
-        <div className="border-r border-gray-500 h-full flex justify-center items-center gap-2 px-4">
+        <div className=" h-full flex justify-center items-center gap-2 border-r-1 border-[#4d5058] px-4">
           <div
             className="border border-gray-400 p-1 rounded-md w-9 h-9 cursor-pointer"
             onClick={undo}
@@ -615,7 +635,7 @@ export default function CanvasTable() {
             </svg>
           </div>
         </div>
-        <div className="border-r border-gray-500 h-full flex justify-center items-center gap-2 px-4">
+        <div className=" h-full flex justify-center items-center gap-2 border-r-1 border-[#4d5058] px-4">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="24"
@@ -653,41 +673,156 @@ export default function CanvasTable() {
             <line x1="8" x2="14" y1="11" y2="11" />
           </svg>
         </div>
-        <div className="border-r border-gray-500 h-full flex justify-center items-center gap-2 px-4">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="cursor-pointer"
-            onClick={addLayer}
-          >
-            <path d="m16.02 12 5.48 3.13a1 1 0 0 1 0 1.74L13 21.74a2 2 0 0 1-2 0l-8.5-4.87a1 1 0 0 1 0-1.74L7.98 12" />
-            <path d="M13 13.74a2 2 0 0 1-2 0L2.5 8.87a1 1 0 0 1 0-1.74L11 2.26a2 2 0 0 1 2 0l8.5 4.87a1 1 0 0 1 0 1.74Z" />
-          </svg>
-        </div>
-        <div className="border-r border-gray-500 h-full flex justify-center items-center gap-2 px-4">
-          <button onClick={() => console.log(layers)}>Ver capas 👻</button>
-        </div>
       </nav>
 
       <nav className="fixed right-2 top-1/2 -translate-y-1/2 min-h-40 w-fit bg-[#2f2f2f] p-2 py-4 rounded-md z-40">
         <div className="flex flex-col  justify-center items-center gap-2">
-          <p className="text-lg font-medium">Layers</p>
+          <div className="self-start border-b-2 border-[#4d5058] w-full flex flex-row justify-between items-center py-1 ">
+            <p className="text-xl font-medium ">Layers </p>
+            <button
+              onClick={addLayer}
+              className="cursor-pointer p-1 rounded-md hover:bg-[#555555]"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="lucide lucide-plus"
+              >
+                <path d="M5 12h14" />
+                <path d="M12 5v14" />
+              </svg>
+            </button>
+          </div>
           {layers.length > 0 ? (
             layers.map((layer) => (
               <div
                 key={layer.id}
-                className="border border-gray-400 p-1 rounded-md cursor-pointer"
-                onClick={() => handleActiveLayer(layer.id)}
+                style={{
+                  backgroundColor: layer.active ? "rgb(25, 130, 255, 0.1)" : "",
+                }}
+                className="border-2 border-[#4d5058] p-2 rounded-md w-60 flex flex-col gap-2"
               >
-                <p>Layer: {layer.id}</p>
-                <p>State: {layer.active ? "Active" : "No active"}</p>
+                <div className="flex flex-row justify-between items-center w-full gap-2 ">
+                  <div className="flex flex-row gap-1">
+                    <button
+                      className="cursor-pointer rounded-sm p-1 hover:bg-[#555555]"
+                      onClick={() => handleLayerVisibility(layer.id)}
+                    >
+                      {layer.visible ? (
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          class="lucide lucide-eye"
+                        >
+                          <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
+                      ) : (
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          class="lucide lucide-eye-off"
+                        >
+                          <path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" />
+                          <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" />
+                          <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" />
+                          <path d="m2 2 20 20" />
+                        </svg>
+                      )}
+                    </button>
+                    <p>{layer.name}</p>
+                  </div>
+                  <div className="flex flex-row gap-1">
+                    <button
+                      className="cursor-pointer rounded-sm p-1 hover:bg-[#555555]"
+                      onClick={() => handleZindexPosition(layer.id, "arriba")}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        class="lucide lucide-chevron-up"
+                      >
+                        <path d="m18 15-6-6-6 6" />
+                      </svg>
+                    </button>
+                    <button
+                      className="cursor-pointer rounded-sm p-1 hover:bg-[#555555]"
+                      onClick={() => handleZindexPosition(layer.id, "abajo")}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        class="lucide lucide-chevron-down"
+                      >
+                        <path d="m6 9 6 6 6-6" />
+                      </svg>
+                    </button>
+                    <button
+                      className="cursor-pointer hover:bg-red-500 rounded-sm p-1"
+                      onClick={() => handleDropLayer(layer.id)}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        class="lucide lucide-x"
+                      >
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <button
+                    className="cursor-pointer p-1 px-2 rounded-md w-18 "
+                    style={{
+                      backgroundColor: layer.active ? "#156cd3" : "#4d5058",
+                    }}
+                    onClick={() => handleActiveLayer(layer.id)}
+                  >{`${layer.active ? "Active" : "Activate"} `}</button>
+                </div>
               </div>
             ))
           ) : (
