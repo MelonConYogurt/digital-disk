@@ -2,8 +2,19 @@ import {useRef, useState, useEffect} from "react";
 import ColorPicker from "./colorPicker";
 
 export default function CanvasTable() {
-  const canvasRef = useRef(null);
   const previewCanvasRef = useRef(null);
+
+  const layersRefs = useRef([]);
+
+  const [layers, setLayers] = useState([
+    {
+      id: 0,
+      active: true,
+      name: `layer base`,
+      undoStack: [],
+      redoStack: [],
+    },
+  ]);
 
   const [isDrawing, setIsDrawing] = useState(false);
   const [isDrawingActive, setIsDrawingActive] = useState(false);
@@ -29,9 +40,6 @@ export default function CanvasTable() {
   const [origin, setOrigin] = useState({x: 0, y: 0});
 
   const [pixelSize, setPixelSize] = useState(1);
-
-  const [undoStack, setUndoStack] = useState([]);
-  const [redoStack, setRedoStack] = useState([]);
 
   const [isModalOpen, setIsModalOpen] = useState(true);
 
@@ -98,7 +106,7 @@ export default function CanvasTable() {
     const [x, y] = getMouseCoordinates(event);
     const colIndex = Math.floor(x / cellWidth);
     const rowIndex = Math.floor(y / cellHeight);
-    const canvas = canvasRef.current;
+    const canvas = event.target;
 
     if (isDrawingActive) {
       setIsDrawing(true);
@@ -123,7 +131,7 @@ export default function CanvasTable() {
   }
 
   function getMouseCoordinates(event) {
-    const canvas = canvasRef.current;
+    const canvas = event.target;
     const rect = canvas.getBoundingClientRect();
 
     const x = (event.clientX - rect.left) / zoomLevel;
@@ -197,7 +205,7 @@ export default function CanvasTable() {
           const newX = i * cellWidth;
           const newY = j * cellHeight;
 
-          if (canvas === canvasRef.current) {
+          if (canvas !== previewCanvasRef.current) {
             ctx.fillStyle = color;
             ctx.fillRect(newX, newY, cellWidth, cellHeight);
           } else if (canvas === previewCanvasRef.current) {
@@ -211,7 +219,7 @@ export default function CanvasTable() {
 
   function handleMouseDraw(event) {
     const [x, y] = getMouseCoordinates(event);
-    const canvas = canvasRef.current;
+    const canvas = event.target;
 
     const colIndex = Math.floor(x / cellWidth);
     const rowIndex = Math.floor(y / cellHeight);
@@ -231,18 +239,17 @@ export default function CanvasTable() {
       setPreviousPosition(prevPos);
 
       if (prevPos) {
-        interpolateCells(prevPos, newPos);
+        interpolateCells(prevPos, newPos, canvas);
       }
     } else {
       updatePreview(event);
     }
   }
 
-  function interpolateCells(prev, curr) {
+  function interpolateCells(prev, curr, canvas) {
     if (prev && curr) {
       let [x1, y1] = prev;
       let [x2, y2] = curr;
-      const canvas = canvasRef.current;
 
       while (x1 !== x2 || y1 !== y2) {
         const color = selectedColor;
@@ -277,52 +284,133 @@ export default function CanvasTable() {
     setZoomLevel((prev) => prev / 1.2);
   }
 
-  function saveCanvas() {
-    const canvas = canvasRef.current;
-    const dataURL = canvas.toDataURL("image/png");
+  function saveCanvas(canvas) {
+    // const dataURL = canvas.toDataURL("image/png");
 
-    const downloadLink = document.createElement("a");
-    downloadLink.href = dataURL;
-    downloadLink.download = "pixel-art.png";
+    // const downloadLink = document.createElement("a");
+    // downloadLink.href = dataURL;
+    // downloadLink.download = "pixel-art.png";
 
-    document.body.appendChild(downloadLink);
-    downloadLink.click();
-    document.body.removeChild(downloadLink);
+    // document.body.appendChild(downloadLink);
+    // downloadLink.click();
+    // document.body.removeChild(downloadLink);
 
-    return dataURL;
+    // return dataURL;
+    console.log("Falta arreglar");
+  }
+
+  function addLayer() {
+    const id = layers.length;
+    const imageData = layers[0].undoStack[0];
+
+    setLayers((prev) => [
+      ...prev,
+      {
+        id: id,
+        active: false,
+        name: `layer ${id}`,
+        undoStack: [imageData],
+        redoStack: [],
+      },
+    ]);
   }
 
   function undo() {
-    if (undoStack.length > 1) {
-      const imageData = undoStack[undoStack.length - 1];
-      const prevImage = undoStack[undoStack.length - 2];
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext("2d");
-      ctx.putImageData(prevImage, 0, 0);
-      setRedoStack((prev) => [...prev, imageData]);
-      setUndoStack((prev) => prev.slice(0, -1));
+    const ActiveLayerIndex = layers.findIndex((layer) => layer.active === true);
+    const ActiveLayer = layers[ActiveLayerIndex];
+
+    if (ActiveLayer) {
+      if (ActiveLayer.undoStack.length > 1) {
+        const imageData =
+          ActiveLayer.undoStack[ActiveLayer.undoStack.length - 1];
+        const prevImage =
+          ActiveLayer.undoStack[ActiveLayer.undoStack.length - 2];
+
+        const canvas = layersRefs.current[ActiveLayerIndex];
+        const ctx = canvas.getContext("2d");
+
+        ctx.putImageData(prevImage, 0, 0);
+
+        setLayers((prev) => {
+          return prev.map((layer) => {
+            if (layer.active) {
+              return {
+                ...layer,
+                redoStack: [...layer.redoStack, imageData],
+                undoStack: layer.undoStack.slice(0, -1),
+              };
+            }
+            return layer;
+          });
+        });
+      }
     }
   }
 
   function redo() {
-    if (redoStack.length > 0) {
-      console.log("redo");
-      const imageData = redoStack[redoStack.length - 1];
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext("2d");
-      ctx.putImageData(imageData, 0, 0);
-      setUndoStack((prev) => [...prev, imageData]);
-      setRedoStack((prev) => prev.slice(0, -1));
+    const ActiveLayerIndex = layers.findIndex((layer) => layer.active === true);
+    const ActiveLayer = layers[ActiveLayerIndex];
+
+    if (ActiveLayer) {
+      if (ActiveLayer.redoStack.length > 0) {
+        const canvas = layersRefs.current[ActiveLayerIndex];
+        const ctx = canvas.getContext("2d");
+
+        const imageData =
+          ActiveLayer.redoStack[ActiveLayer.redoStack.length - 1];
+        ctx.putImageData(imageData, 0, 0);
+
+        setLayers((prev) => {
+          return prev.map((layer) => {
+            if (layer.active) {
+              return {
+                ...layer,
+                redoStack: layer.redoStack.slice(0, -1),
+                undoStack: [...layer.undoStack, imageData],
+              };
+            }
+            return layer;
+          });
+        });
+      }
     }
   }
 
   function handleTrace() {
-    const canvas = canvasRef.current;
+    const canvasIndex = layers.findIndex((layer) => layer.active === true);
+    const canvas = layersRefs.current[canvasIndex];
+
+    if (!canvas) return;
+
     const ctx = canvas.getContext("2d");
     const imageData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
 
-    setRedoStack([]);
-    setUndoStack((prev) => [...prev, imageData]);
+    setLayers((prev) => {
+      return prev.map((layer) => {
+        if (layer.active === true) {
+          return {
+            ...layer,
+            undoStack: [...layer.undoStack, imageData],
+            redoStack: [],
+          };
+        }
+        return layer;
+      });
+    });
+  }
+
+  function handleActiveLayer(index) {
+    setLayers((prev) => {
+      return prev.map((layer) => {
+        if (layer.id === index) {
+          return {...layer, active: true};
+        } else if (layer.active === true) {
+          return {...layer, active: false};
+        } else {
+          return layer;
+        }
+      });
+    });
   }
 
   useEffect(() => {
@@ -333,6 +421,278 @@ export default function CanvasTable() {
 
   return (
     <section className="flex flex-col text-gray-200">
+      <div className="py-30 flex justify-center items-center w-full">
+        <div
+          onPointerMove={handleMouseDraw}
+          className="relative overflow-auto"
+          style={{
+            backgroundColor: "white",
+            background:
+              "repeating-conic-gradient(#f0f0f0 0deg 90deg, white 90deg 180deg)",
+            backgroundSize: `${cellWidth * 2}px ${cellHeight * 2}px`,
+            width: canvasWidth,
+            height: canvasHeight,
+            scale: zoomLevel,
+            transformOrigin: `${origin.x !== 0 ? origin.x + "px" : "50%"} ${
+              origin.y !== 0 ? origin.y + "px" : "50%"
+            }`,
+          }}
+        >
+          {layers.length > 0 ? (
+            layers.map((layer, index) => (
+              <canvas
+                key={layer.id}
+                className="absolute top-0 left-0"
+                onPointerMove={handleMouseDraw}
+                onPointerDown={OnMouseDownDraw}
+                onPointerUp={OnMouseUpDraw}
+                onPointerLeave={cancelDrawing}
+                onWheel={handleZoom}
+                width={canvasWidth}
+                height={canvasHeight}
+                style={{
+                  visibility: layer.active === true ? "visible" : "hidden",
+                  zIndex: 10,
+                }}
+                ref={(element) => (layersRefs.current[index] = element)}
+              ></canvas>
+            ))
+          ) : (
+            <></>
+          )}
+
+          <canvas
+            id="Canvas-preview"
+            className="absolute top-0 left-0 z-20 pointer-events-none"
+            ref={previewCanvasRef}
+            width={canvasWidth}
+            height={canvasHeight}
+          ></canvas>
+        </div>
+      </div>
+
+      <nav className="fixed left-2 shadow top-1/2 -translate-y-1/2 bg-[#2f2f2f] p-2 py-4 gap-2 flex flex-col justify-center items-center rounded-md w-12 z-40 ">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="1.5rem"
+          height="1.5rem"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M22 2 2 22" />
+        </svg>
+        <input
+          type="range"
+          className=" slider-pixel-size"
+          min={1}
+          max={24}
+          onChange={handlePixelSize}
+          value={pixelSize}
+        />
+        <div>
+          <p>{`${pixelSize}px`}</p>
+        </div>
+      </nav>
+
+      <nav className="flex flex-row justify-starts items-center bg-[#2f2f2f]  w-full h-20 fixed top-0 left-0 z-50 border-b border-gray-500">
+        <div className="flex flex-row gap-2 justify-center items-center px-4 border-r border-gray-500 h-full">
+          <button
+            className={`border border-gray-400 p-1 rounded-md w-9 h-9 ${
+              isEraserActive ? "bg-[#555555]" : ""
+            } cursor-pointer`}
+            onClick={toggleEraser}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="1.5rem"
+              height="1.5rem"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21" />
+              <path d="M22 21H7" />
+              <path d="m5 11 9 9" />
+            </svg>
+          </button>
+          <button
+            className={`border border-gray-400 p-1 rounded-md w-9 h-9 ${
+              isDrawingActive ? "bg-[#555555]" : ""
+            } cursor-pointer`}
+            onClick={toggleDrawing}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="m9.06 11.9 8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08" />
+              <path d="M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08 1.1 2.49 2.02 4 2.02 2.2 0 4-1.8 4-4.04a3.01 3.01 0 0 0-3-3.02z" />
+            </svg>
+          </button>
+        </div>
+        <div className="border-r border-gray-500 h-full flex justify-center items-center px-4">
+          <ColorPicker selectColor={handleColorChange} />
+        </div>
+        <div className="border-r border-gray-500 h-full flex justify-center items-center">
+          <button
+            onClick={() => {
+              console.log("Falta arreglar");
+            }}
+            className="px-4 cursor-pointer"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="1.5rem"
+              height="1.5rem"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" x2="12" y1="15" y2="3" />
+            </svg>
+          </button>
+        </div>
+        <div className="border-r border-gray-500 h-full flex justify-center items-center gap-2 px-4">
+          <div
+            className="border border-gray-400 p-1 rounded-md w-9 h-9 cursor-pointer"
+            onClick={undo}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M3 7v6h6" />
+              <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
+            </svg>
+          </div>
+
+          <div
+            className="border border-gray-400 p-1 rounded-md w-9 h-9 cursor-pointer"
+            onClick={redo}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M21 7v6h-6" />
+              <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7" />
+            </svg>
+          </div>
+        </div>
+        <div className="border-r border-gray-500 h-full flex justify-center items-center gap-2 px-4">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="cursor-pointer"
+            onClick={zoomIn}
+          >
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" x2="16.65" y1="21" y2="16.65" />
+            <line x1="11" x2="11" y1="8" y2="14" />
+            <line x1="8" x2="14" y1="11" y2="11" />
+          </svg>
+          <p>{`${Math.round(zoomLevel * 100)}%`}</p>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="cursor-pointer"
+            onClick={zoomOut}
+          >
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" x2="16.65" y1="21" y2="16.65" />
+            <line x1="8" x2="14" y1="11" y2="11" />
+          </svg>
+        </div>
+        <div className="border-r border-gray-500 h-full flex justify-center items-center gap-2 px-4">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="cursor-pointer"
+            onClick={addLayer}
+          >
+            <path d="m16.02 12 5.48 3.13a1 1 0 0 1 0 1.74L13 21.74a2 2 0 0 1-2 0l-8.5-4.87a1 1 0 0 1 0-1.74L7.98 12" />
+            <path d="M13 13.74a2 2 0 0 1-2 0L2.5 8.87a1 1 0 0 1 0-1.74L11 2.26a2 2 0 0 1 2 0l8.5 4.87a1 1 0 0 1 0 1.74Z" />
+          </svg>
+        </div>
+        <div className="border-r border-gray-500 h-full flex justify-center items-center gap-2 px-4">
+          <button onClick={() => console.log(layers)}>Ver capas 👻</button>
+        </div>
+      </nav>
+
+      <nav className="fixed right-2 top-1/2 -translate-y-1/2 min-h-40 w-fit bg-[#2f2f2f] p-2 py-4 rounded-md z-40">
+        <div className="flex flex-col  justify-center items-center gap-2">
+          <p className="text-lg font-medium">Layers</p>
+          {layers.length > 0 ? (
+            layers.map((layer) => (
+              <div
+                key={layer.id}
+                className="border border-gray-400 p-1 rounded-md cursor-pointer"
+                onClick={() => handleActiveLayer(layer.id)}
+              >
+                <p>Layer: {layer.id}</p>
+                <p>State: {layer.active ? "Active" : "No active"}</p>
+              </div>
+            ))
+          ) : (
+            <p>No layers yet 🎈</p>
+          )}
+        </div>
+      </nav>
+
       {isModalOpen ? (
         <div className="fixed inset-0 flex items-center justify-center bg-transparent backdrop-blur-xs z-[100]">
           <div className="bg-[#292929] p-6 rounded-lg shadow-2xl max-w-xl w-full flex flex-col  items-start gap-2">
@@ -431,220 +791,6 @@ export default function CanvasTable() {
       ) : (
         ""
       )}
-      <div className="py-30 flex justify-center items-center w-full">
-        <div
-          onPointerMove={handleMouseDraw}
-          className="relative overflow-auto"
-          style={{
-            backgroundColor: "white",
-            background:
-              "repeating-conic-gradient(#f0f0f0 0deg 90deg, white 90deg 180deg)",
-            backgroundSize: `${cellWidth * 2}px ${cellHeight * 2}px`,
-            width: canvasWidth,
-            height: canvasHeight,
-            scale: zoomLevel,
-            transformOrigin: `${origin.x !== 0 ? origin.x + "px" : "50%"} ${
-              origin.y !== 0 ? origin.y + "px" : "50%"
-            }`,
-          }}
-        >
-          <canvas
-            id="Canvas-draw"
-            className="absolute top-0 left-0 z-10"
-            onPointerMove={handleMouseDraw}
-            onPointerDown={OnMouseDownDraw}
-            onPointerUp={OnMouseUpDraw}
-            onPointerLeave={cancelDrawing}
-            onWheel={handleZoom}
-            ref={canvasRef}
-            width={canvasWidth}
-            height={canvasHeight}
-          ></canvas>
-          <canvas
-            id="Canvas-preview"
-            className="absolute top-0 left-0 z-20 pointer-events-none"
-            ref={previewCanvasRef}
-            width={canvasWidth}
-            height={canvasHeight}
-          ></canvas>
-        </div>
-      </div>
-
-      <nav className="fixed left-2 shadow top-1/2 -translate-y-1/2 bg-[#2f2f2f] p-2 py-4 gap-2 flex flex-col justify-center items-center rounded-md w-12">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="1.5rem"
-          height="1.5rem"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M22 2 2 22" />
-        </svg>
-        <input
-          type="range"
-          className=" slider-pixel-size"
-          min={1}
-          max={24}
-          onChange={handlePixelSize}
-          value={pixelSize}
-        />
-        <div>
-          <p>{`${pixelSize}px`}</p>
-        </div>
-      </nav>
-
-      <nav className="flex flex-row justify-starts items-center bg-[#2f2f2f]  w-full h-20 fixed top-0 left-0 z-50">
-        <div className="flex flex-row gap-2 justify-center items-center px-4 border-r border-gray-500 h-full">
-          <button
-            className={`border border-gray-400 p-1 rounded-md w-9 h-9 ${
-              isEraserActive ? "bg-[#555555]" : ""
-            } cursor-pointer`}
-            onClick={toggleEraser}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="1.5rem"
-              height="1.5rem"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21" />
-              <path d="M22 21H7" />
-              <path d="m5 11 9 9" />
-            </svg>
-          </button>
-          <button
-            className={`border border-gray-400 p-1 rounded-md w-9 h-9 ${
-              isDrawingActive ? "bg-[#555555]" : ""
-            } cursor-pointer`}
-            onClick={toggleDrawing}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="m9.06 11.9 8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08" />
-              <path d="M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08 1.1 2.49 2.02 4 2.02 2.2 0 4-1.8 4-4.04a3.01 3.01 0 0 0-3-3.02z" />
-            </svg>
-          </button>
-        </div>
-        <div className="border-r border-gray-500 h-full flex justify-center items-center px-4">
-          <ColorPicker selectColor={handleColorChange} />
-        </div>
-        <div className="border-r border-gray-500 h-full flex justify-center items-center">
-          <button onClick={saveCanvas} className="px-4 cursor-pointer">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="1.5rem"
-              height="1.5rem"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" x2="12" y1="15" y2="3" />
-            </svg>
-          </button>
-        </div>
-        <div className="border-r border-gray-500 h-full flex justify-center items-center gap-2 px-4">
-          <div
-            className="border border-gray-400 p-1 rounded-md w-9 h-9 cursor-pointer"
-            onClick={undo}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M3 7v6h6" />
-              <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
-            </svg>
-          </div>
-
-          <div
-            className="border border-gray-400 p-1 rounded-md w-9 h-9 cursor-pointer"
-            onClick={redo}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M21 7v6h-6" />
-              <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7" />
-            </svg>
-          </div>
-        </div>
-        <div className="border-r border-gray-500 h-full flex justify-center items-center gap-2 px-4">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            className="cursor-pointer"
-            onClick={zoomIn}
-          >
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" x2="16.65" y1="21" y2="16.65" />
-            <line x1="11" x2="11" y1="8" y2="14" />
-            <line x1="8" x2="14" y1="11" y2="11" />
-          </svg>
-          <p>{`${Math.round(zoomLevel * 100)}%`}</p>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            className="cursor-pointer"
-            onClick={zoomOut}
-          >
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" x2="16.65" y1="21" y2="16.65" />
-            <line x1="8" x2="14" y1="11" y2="11" />
-          </svg>
-        </div>
-      </nav>
     </section>
   );
 }
