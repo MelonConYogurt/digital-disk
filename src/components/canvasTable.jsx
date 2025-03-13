@@ -832,40 +832,75 @@ export default function CanvasTable() {
       </nav>
 
       {isModalOpen ? (
-        <div className="fixed inset-0 flex items-center justify-center bg-transparent backdrop-blur-xs z-[100]">
+        <div className="fixed inset-0 flex items-center justify-center backdrop-brightness-75  backdrop-blur-xs z-[100]">
           <div className="bg-[#292929] p-6 rounded-lg shadow-2xl max-w-xl w-full flex flex-col  items-start gap-2">
             <h2 className="text-2xl place-self-center">Configuration </h2>
 
-            <div className="flex flex-col gap-5 justify-center items-center mt-5">
-              <p className="self-start text-xl">Canvas sizes:</p>
-              <div className="flex flex-row justify-center items-center gap-5">
-                <div className="inline-flex justify-center items-center gap-2">
-                  <label htmlFor="rows">Widht:</label>
-                  <input
-                    className="border border-gray-500 p-1 rounded-md w-20"
-                    id="rows"
-                    type="number"
-                    min={1}
-                    max={300}
-                    placeholder={colCount}
-                    onChange={(e) => {
-                      handleCols(e.target.value);
-                    }}
-                  />
+            <div className="flex flex-col gap-5 justify-center items-center mt-5 w-full">
+              <div className="flex flex-col gap-2 justify-center items-start border-b-2 border-[#4d5058] py-2 w-full">
+                <p className="text-xl">Canvas size</p>
+                <div className="flex flex-row justify-center items-center gap-5">
+                  <div className="inline-flex justify-center items-center gap-2">
+                    <label htmlFor="rows">Widht:</label>
+                    <input
+                      className="border border-gray-500 p-1 rounded-md w-20"
+                      id="rows"
+                      type="number"
+                      min={1}
+                      max={300}
+                      placeholder={colCount}
+                      onChange={(e) => {
+                        handleCols(e.target.value);
+                      }}
+                    />
+                  </div>
+                  <div className="inline-flex justify-center items-center gap-2">
+                    <label htmlFor="cols">Height:</label>
+                    <input
+                      className="border border-gray-500 p-1 rounded-md w-20"
+                      id="cols"
+                      type="number"
+                      min={1}
+                      max={300}
+                      placeholder={rowCount}
+                      onChange={(e) => {
+                        handleRows(e.target.value);
+                      }}
+                    />
+                  </div>
                 </div>
-                <div className="inline-flex justify-center items-center gap-2">
-                  <label htmlFor="cols">Height:</label>
-                  <input
-                    className="border border-gray-500 p-1 rounded-md w-20"
-                    id="cols"
-                    type="number"
-                    min={1}
-                    max={300}
-                    placeholder={rowCount}
-                    onChange={(e) => {
-                      handleRows(e.target.value);
-                    }}
-                  />
+              </div>
+              <div className="flex flex-col gap-2 justify-center items-start border-b-2 border-[#4d5058] py-2 w-full">
+                <p className="text-xl">Cell size</p>
+                <div className="flex flex-row justify-center items-center gap-5">
+                  <div className="inline-flex justify-center items-center gap-2">
+                    <label htmlFor="cellWidth">Widht:</label>
+                    <input
+                      className="border border-gray-500 p-1 rounded-md w-20"
+                      id="cellWidth"
+                      type="number"
+                      min={1}
+                      max={32}
+                      value={cellWidth}
+                      onChange={(e) => {
+                        setCellWidth(Number(e.target.value));
+                      }}
+                    />
+                  </div>
+                  <div className="inline-flex justify-center items-center gap-2">
+                    <label htmlFor="cellHeight">Height:</label>
+                    <input
+                      className="border border-gray-500 p-1 rounded-md w-20"
+                      id="cellHeight"
+                      type="number"
+                      min={1}
+                      max={32}
+                      value={cellHeight}
+                      onChange={(e) => {
+                        setCellHeight(Number(e.target.value));
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -919,7 +954,7 @@ export default function CanvasTable() {
             <div className="self-end">
               <button
                 onClick={handleModal}
-                className="border border-gray-500 p-1 px-2 rounded-md cursor-pointer hover:bg-[#2f2f2f]"
+                className="cursor-pointer p-1 px-2 rounded-md w-18 bg-[#156cd3] hover:bg-[#0f51a0] transition-all duration-100"
               >
                 Accept
               </button>
