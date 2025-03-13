@@ -10,6 +10,7 @@ export default function CanvasTable() {
     {
       id: 0,
       active: true,
+      visible: true,
       name: `layer base`,
       undoStack: [],
       redoStack: [],
@@ -308,6 +309,7 @@ export default function CanvasTable() {
       {
         id: id,
         active: false,
+        visible: true,
         name: `layer ${id}`,
         undoStack: [imageData],
         redoStack: [],
@@ -451,8 +453,9 @@ export default function CanvasTable() {
                 width={canvasWidth}
                 height={canvasHeight}
                 style={{
-                  visibility: layer.active === true ? "visible" : "hidden",
+                  visibility: layer.visible === true ? "visible" : "hidden",
                   zIndex: 10,
+                  pointerEvents: layer.active === true ? "auto" : "none",
                 }}
                 ref={(element) => (layersRefs.current[index] = element)}
               ></canvas>
