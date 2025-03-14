@@ -21,6 +21,7 @@ export default function CanvasTable() {
 
   const [isDrawing, setIsDrawing] = useState(false);
   const [isDrawingActive, setIsDrawingActive] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const [isEraserActive, setIsEraserActive] = useState(false);
   const [erasing, setErasing] = useState(false);
@@ -479,6 +480,11 @@ export default function CanvasTable() {
 
   function allowDragAndDrop(event) {
     event.preventDefault();
+    setIsDragging(true);
+  }
+
+  function handleDragLeave() {
+    setIsDragging(false);
   }
 
   function handleDrop(event) {
@@ -493,6 +499,19 @@ export default function CanvasTable() {
     const file = upLoadFile[0];
     if (file.type.startsWith("image/")) {
       toast.success("Image apliyed");
+      drawImage(file);
+    } else {
+      toast.warning("Only image files");
+    }
+  }
+
+  function handleChoseFile(event) {
+    const file = event.target.files[0];
+
+    if (!file) return;
+
+    if (file.type.startsWith("image/")) {
+      toast.success("Image applied");
       drawImage(file);
     } else {
       toast.warning("Only image files");
@@ -737,12 +756,23 @@ export default function CanvasTable() {
             <line x1="8" x2="14" y1="11" y2="11" />
           </svg>
         </div>
-        <div className=" h-full flex justify-center items-center gap-2 border-r-1 border-[#4d5058] px-4">
+        <label className="h-full flex justify-center items-center gap-2 border-r-1 border-[#4d5058] px-4">
           <div
-            className="border border-dashed  p-1 w-25 h-15 flex justify-center items-center rounded-md border-white"
+            className="border border-dashed p-1 w-25 h-15 flex justify-center items-center rounded-md border-white hover:bg-[#555555] transition-all duration-100"
             onDragOver={allowDragAndDrop}
+            onDragLeave={handleDragLeave}
             onDrop={handleDrop}
+            style={{
+              backgroundColor: isDragging ? "#555555" : "#2f2f2f",
+              transition: "all 100ms ease-in-out",
+            }}
           >
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleChoseFile}
+            />
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="24"
@@ -760,7 +790,7 @@ export default function CanvasTable() {
               <line x1="12" x2="12" y1="3" y2="15" />
             </svg>
           </div>
-        </div>
+        </label>
       </nav>
 
       <nav className="fixed right-2 top-1/2 -translate-y-1/2 min-h-40 w-fit bg-[#2f2f2f] p-2 py-4 rounded-md z-40 max-h-4/5 overflow-y-auto custom-scroll">
