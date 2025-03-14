@@ -560,7 +560,7 @@ export default function CanvasTable() {
                 width={canvasWidth}
                 height={canvasHeight}
                 style={{
-                  visibility: layer.visible ? "visible" : "hidden",
+                  display: layer.visible ? "block" : "none",
                   zIndex: 10,
                   pointerEvents: layer.active ? "auto" : "none",
                 }}
