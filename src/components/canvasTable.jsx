@@ -286,19 +286,18 @@ export default function CanvasTable() {
     setZoomLevel((prev) => prev / 1.2);
   }
 
-  function saveCanvas(canvas) {
-    // const dataURL = canvas.toDataURL("image/png");
+  function previewLayer(imageData) {
+    if (!imageData) return "";
 
-    // const downloadLink = document.createElement("a");
-    // downloadLink.href = dataURL;
-    // downloadLink.download = "pixel-art.png";
+    const canvas = document.createElement("canvas");
+    canvas.width = imageData.width;
+    canvas.height = imageData.height;
 
-    // document.body.appendChild(downloadLink);
-    // downloadLink.click();
-    // document.body.removeChild(downloadLink);
+    let ctx = canvas.getContext("2d");
+    ctx.putImageData(imageData, 0, 0);
 
-    // return dataURL;
-    console.log("Falta arreglar");
+    ctx = null;
+    return canvas.toDataURL();
   }
 
   function addLayer() {
@@ -675,7 +674,7 @@ export default function CanvasTable() {
         </div>
       </nav>
 
-      <nav className="fixed right-2 top-1/2 -translate-y-1/2 min-h-40 w-fit bg-[#2f2f2f] p-2 py-4 rounded-md z-40">
+      <nav className="fixed right-2 top-1/2 -translate-y-1/2 min-h-40 w-fit bg-[#2f2f2f] p-2 py-4 rounded-md z-40 max-h-4/5 overflow-y-auto custom-scroll">
         <div className="flex flex-col  justify-center items-center gap-2">
           <div className="self-start border-b-2 border-[#4d5058] w-full flex flex-row justify-between items-center py-1 ">
             <p className="text-xl font-medium ">Layers </p>
@@ -815,8 +814,23 @@ export default function CanvasTable() {
                   </div>
                 </div>
                 <div>
+                  {layer.undoStack && layer.undoStack.length > 0 ? (
+                    <div className="bg-white rounded-sm">
+                      <img
+                        src={previewLayer(
+                          layer.undoStack[layer.undoStack.length - 1]
+                        )}
+                        alt={`Vista previa de ${layer.name}`}
+                        className="w-30 h-30 object-fill"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-full h-16 bg-gray-700 flex items-center justify-center text-xs text-gray-400">
+                      Capa vacía
+                    </div>
+                  )}
                   <button
-                    className="cursor-pointer p-1 px-2 rounded-md w-18 "
+                    className="cursor-pointer p-1 px-2 rounded-md w-18 mt-2"
                     style={{
                       backgroundColor: layer.active ? "#156cd3" : "#4d5058",
                     }}
