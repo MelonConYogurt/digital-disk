@@ -1,5 +1,6 @@
 import {useRef, useState, useEffect} from "react";
 import ColorPicker from "./colorPicker";
+import {Toaster, toast} from "sonner";
 
 export default function CanvasTable() {
   const previewCanvasRef = useRef(null);
@@ -33,8 +34,8 @@ export default function CanvasTable() {
   const [cellWidth, setCellWidth] = useState(8);
   const [cellHeight, setCellHeight] = useState(8);
 
-  const [rowCount, setRowCount] = useState(64);
-  const [colCount, setColCount] = useState(64);
+  const [rowCount, setRowCount] = useState(100);
+  const [colCount, setColCount] = useState(100);
 
   const [selectedColor, setSelectedColor] = useState("#ff00eb");
 
@@ -81,7 +82,7 @@ export default function CanvasTable() {
   function clearPreview() {
     try {
       const previewCanvas = previewCanvasRef.current;
-      const ctx = previewCanvas.getContext("2d");
+      const ctx = previewCanvas.getContext("2d", {willReadFrequently: true});
       ctx.clearRect(0, 0, canvasWidth, canvasHeight);
       setLastHoveredCell(null);
       setHoveredCell(null);
@@ -150,7 +151,7 @@ export default function CanvasTable() {
       const rowIndex = Math.floor(y / cellHeight);
 
       const canvas = previewCanvasRef.current;
-      const ctx = canvas.getContext("2d");
+      const ctx = canvas.getContext("2d", {willReadFrequently: true});
       const color = "rgba(0, 0, 0, 0.5)";
 
       if (lastHoveredCell && hoveredCell) {
@@ -179,7 +180,7 @@ export default function CanvasTable() {
   }
 
   function eraseCell(x, y, canvas) {
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", {willReadFrequently: true});
 
     let initialX = x - (pixelSize - 1);
     let initialY = y - (pixelSize - 1);
@@ -194,7 +195,7 @@ export default function CanvasTable() {
   }
 
   function drawCell(x, y, color, canvas) {
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", {willReadFrequently: true});
 
     if (erasing) {
       eraseCell(x, y, canvas);
@@ -293,7 +294,7 @@ export default function CanvasTable() {
     canvas.width = imageData.width;
     canvas.height = imageData.height;
 
-    let ctx = canvas.getContext("2d");
+    let ctx = canvas.getContext("2d", {willReadFrequently: true});
     ctx.putImageData(imageData, 0, 0);
 
     ctx = null;
@@ -329,7 +330,7 @@ export default function CanvasTable() {
           ActiveLayer.undoStack[ActiveLayer.undoStack.length - 2];
 
         const canvas = layersRefs.current[ActiveLayerIndex];
-        const ctx = canvas.getContext("2d");
+        const ctx = canvas.getContext("2d", {willReadFrequently: true});
 
         ctx.putImageData(prevImage, 0, 0);
 
@@ -356,7 +357,7 @@ export default function CanvasTable() {
     if (ActiveLayer) {
       if (ActiveLayer.redoStack.length > 0) {
         const canvas = layersRefs.current[ActiveLayerIndex];
-        const ctx = canvas.getContext("2d");
+        const ctx = canvas.getContext("2d", {willReadFrequently: true});
 
         const imageData =
           ActiveLayer.redoStack[ActiveLayer.redoStack.length - 1];
@@ -384,7 +385,7 @@ export default function CanvasTable() {
 
     if (!canvas) return;
 
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", {willReadFrequently: true});
     const imageData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
 
     setLayers((prev) => {
@@ -433,6 +434,70 @@ export default function CanvasTable() {
   }
 
   function handleZindexPosition(index, position) {}
+
+  function drawImage(image) {
+    const ActiveLayerIndex = layers.findIndex((layer) => layer.active === true);
+    const canvas = layersRefs.current[ActiveLayerIndex];
+
+    if (!canvas) return;
+
+    const img = new Image();
+    img.src = URL.createObjectURL(image);
+
+    img.onload = () => {
+      const ctx = canvas.getContext("2d", {willReadFrequently: true});
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      let data = imageData.data;
+
+      let width = imageData.width;
+      let height = imageData.height;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          let index = (y * width + x) * 4;
+
+          let r = data[index];
+          let g = data[index + 1];
+          let b = data[index + 2];
+          let a = data[index + 3];
+
+          const colIndex = Math.floor(x / cellWidth);
+          const rowIndex = Math.floor(y / cellHeight);
+
+          const color = `rgb(${r}, ${g}, ${b}, ${a})`;
+          drawCell(colIndex, rowIndex, color, canvas);
+        }
+      }
+      URL.revokeObjectURL(img.src);
+      handleTrace();
+    };
+  }
+
+  function allowDragAndDrop(event) {
+    event.preventDefault();
+  }
+
+  function handleDrop(event) {
+    event.preventDefault();
+    const upLoadFile = event.dataTransfer.files;
+
+    if (upLoadFile.length > 1) {
+      toast.error("Upload just one image");
+      return;
+    }
+
+    const file = upLoadFile[0];
+    if (file.type.startsWith("image/")) {
+      toast.success("Image apliyed");
+      drawImage(file);
+    } else {
+      toast.warning("Only image files");
+    }
+  }
 
   useEffect(() => {
     if (isConfigReady && !isDrawing && !erasing) {
@@ -672,6 +737,30 @@ export default function CanvasTable() {
             <line x1="8" x2="14" y1="11" y2="11" />
           </svg>
         </div>
+        <div className=" h-full flex justify-center items-center gap-2 border-r-1 border-[#4d5058] px-4">
+          <div
+            className="border border-dashed  p-1 w-25 h-15 flex justify-center items-center rounded-md border-white"
+            onDragOver={allowDragAndDrop}
+            onDrop={handleDrop}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="lucide lucide-upload"
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" x2="12" y1="3" y2="15" />
+            </svg>
+          </div>
+        </div>
       </nav>
 
       <nav className="fixed right-2 top-1/2 -translate-y-1/2 min-h-40 w-fit bg-[#2f2f2f] p-2 py-4 rounded-md z-40 max-h-4/5 overflow-y-auto custom-scroll">
@@ -815,7 +904,7 @@ export default function CanvasTable() {
                 </div>
                 <div>
                   {layer.undoStack && layer.undoStack.length > 0 ? (
-                    <div className="bg-white rounded-sm">
+                    <div className="bg-white rounded-sm flex justify-center items-center">
                       <img
                         src={previewLayer(
                           layer.undoStack[layer.undoStack.length - 1]
@@ -978,6 +1067,7 @@ export default function CanvasTable() {
       ) : (
         ""
       )}
+      <Toaster richColors position="top-center" />
     </section>
   );
 }
