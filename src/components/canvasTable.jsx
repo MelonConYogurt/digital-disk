@@ -127,6 +127,10 @@ export default function CanvasTable() {
         eraseCell(colIndex, rowIndex, canvas);
       }
     }
+
+    if (!isDrawingActive && !isEraserActive) {
+      toast.info("please select one tool frist");
+    }
   }
 
   function OnMouseUpDraw() {
