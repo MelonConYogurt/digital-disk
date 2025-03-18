@@ -1,48 +1,93 @@
-# Astro Starter Kit: Basics
+# Digital Disk - Editor de Píxeles
 
-```sh
-npm create astro@latest -- --template basics
+Una aplicación web para crear y editar arte de píxeles (pixel art) con múltiples capas y herramientas.
+
+## Características
+
+- 🖌️ Herramientas de dibujo y borrado
+- 🎨 Selector de colores
+- 📑 Sistema de capas
+- ↩️ Deshacer/Rehacer por capa
+- 🔍 Zoom in/out
+- 📏 Tamaño de píxel ajustable
+- 📸 Importación de imágenes
+- 🎯 Vista previa en tiempo real
+
+## Configuración del Canvas
+
+- Presets predefinidos:
+  - Favicon (16x16)
+  - Small (32x32)
+  - Medium (64x64)
+  - Large (128x128)
+  - Emoji (48x48)
+- Tamaño personalizado:
+  - Ancho: 1-300 píxeles
+  - Alto: 1-300 píxeles
+- Tamaño de celda ajustable: 1-32 píxeles
+
+## Herramientas
+
+### Dibujo
+
+- Pincel con tamaño ajustable
+- Selector de color RGB
+- Interpolación entre puntos para trazos suaves
+
+### Borrador
+
+- Borrador con tamaño ajustable
+- Elimina píxeles en capas activas
+
+### Sistema de Capas
+
+- Crear/eliminar capas
+- Activar/desactivar visibilidad
+- Vista previa de contenido
+- Selección de capa activa
+- Historial independiente por capa
+
+### Navegación
+
+- Zoom con rueda del ratón
+- Zoom desde controles
+- Vista porcentual del zoom
+
+### Importación
+
+- Soporte para formatos de imagen
+- Arrastrar y soltar imágenes
+- Conversión automática a píxeles
+
+## Tecnologías
+
+- React.js
+- Tailwind CSS
+- HTML Canvas API
+
+## Uso
+
+1. Configura el tamaño del canvas
+2. Selecciona una herramienta (pincel/borrador)
+3. Ajusta el color y tamaño del pincel
+4. Dibuja en la capa activa
+5. Gestiona capas según necesites
+6. Usa deshacer/rehacer para corregir
+7. Importa imágenes si lo deseas
+
+## Instalación
+
+```bash
+# Clonar repositorio
+git clone [url-repositorio]
+
+# Instalar dependencias
+npm install
+
+# Iniciar servidor de desarrollo
+npm run dev
 ```
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/withastro/astro/tree/latest/examples/basics)
-[![Open with CodeSandbox](https://assets.codesandbox.io/github/button-edit-lime.svg)](https://codesandbox.io/p/sandbox/github/withastro/astro/tree/latest/examples/basics)
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/withastro/astro?devcontainer_path=.devcontainer/basics/devcontainer.json)
+## Licencia
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
-
-![just-the-basics](https://github.com/withastro/astro/assets/2244813/a0a5533c-a856-4198-8470-2d67b1d7c554)
-
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
-
-```text
-/
-├── public/
-│   └── favicon.svg
-├── src/
-│   ├── layouts/
-│   │   └── Layout.astro
-│   └── pages/
-│       └── index.astro
-└── package.json
-```
-
-To learn more about the folder structure of an Astro project, refer to [our guide on project structure](https://docs.astro.build/en/basics/project-structure/).
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+MIT
